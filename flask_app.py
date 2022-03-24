@@ -67,31 +67,50 @@ def handle_dialog(res, req):
         # И спрашиваем какой город он хочет увидеть.
         else:
             sessionStorage[user_id]['first_name'] = first_name
-            res['response'][
-                'text'] = 'Приятно познакомиться, ' \
+            res['response']['text'] = 'Приятно познакомиться, ' \
                           + first_name.title() \
-                          + '. Я - Алиса. Какой город хочешь увидеть?'
+                          + '. Я - Алиса. Отгадаешь город по фото?'
             # получаем варианты buttons из ключей нашего словаря cities
             res['response']['buttons'] = [
                 {
-                    'title': city.title(),
+                    'title': 'да',
                     'hide': True
-                } for city in cities
+                }
             ]
-    # если мы знакомы с пользователем и он нам что-то написал,
-    # то это говорит о том, что он уже говорит о городе,
-    # что хочет увидеть.
+
+    elif req['request']['original_utterance'].lower() in [
+        'да',
+        'хочу',
+        'буду',
+        'хорошо']:
+        res['response']['text'] = 'Первый город'
+        res['response']['card'] = {}
+        res['response']['card']['type'] = 'BigImage'
+        res['response']['card']['image_id'] = cities['москва'][0]
+        return
+    elif req['request']['original_utterance'].lower() in [
+        'нет']:
+        res['response']['text'] = 'В другой раз'
+        res['response']['end_session'] = True
+        return
     else:
         # ищем город в сообщение от пользователя
         city = get_city(req)
         # если этот город среди известных нам,
         # то показываем его (выбираем одну из двух картинок случайно)
         if city in cities:
-            res['response']['card'] = {}
-            res['response']['card']['type'] = 'BigImage'
-            res['response']['card']['title'] = 'Этот город я знаю.'
-            res['response']['card']['image_id'] = random.choice(cities[city])
-            res['response']['text'] = 'Я угадал!'
+            res['response']['text'] = 'Ты угадал! Хочешь сыграть еще?'
+            res['response']['buttons'] = [
+                {
+                    'title': 'да',
+                    'hide': True
+                },
+                {
+                    'title': 'нет',
+                    'hide': True
+                }
+            ]
+
         # если не нашел, то отвечает пользователю
         # 'Первый раз слышу об этом городе.'
         else:
